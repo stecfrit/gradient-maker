@@ -16,7 +16,7 @@ import {
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Slider } from "../components/ui/slider";
-import { Download, Trash2 } from "lucide-react";
+import { Download, Trash2, Settings } from "lucide-react";
 
 interface SettingsDialogProps {
   colors: string[];
@@ -25,6 +25,7 @@ interface SettingsDialogProps {
   pointCount: number;
   backgroundColor: string;
   blurAmount: number;
+  grainAmount: number;
   onSettingsChange: (settings: {
     colors: string[];
     blobCount: number;
@@ -32,6 +33,7 @@ interface SettingsDialogProps {
     pointCount: number;
     backgroundColor: string;
     blurAmount: number;
+    grainAmount: number;
   }) => void;
   onDownload: (width?: number, height?: number) => void;
   onRandomize: () => void;
@@ -44,11 +46,12 @@ const SettingsDialog = ({
   pointCount,
   backgroundColor,
   blurAmount,
+  grainAmount,
   onSettingsChange,
   onDownload,
   onRandomize,
 }: SettingsDialogProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [localColors, setLocalColors] = useState<string[]>(colors);
   const [localBlobCount, setLocalBlobCount] = useState(blobCount);
   const [localSize, setLocalSize] = useState(size);
@@ -56,6 +59,7 @@ const SettingsDialog = ({
   const [localBackgroundColor, setLocalBackgroundColor] =
     useState(backgroundColor);
   const [localBlurAmount, setLocalBlurAmount] = useState(blurAmount);
+  const [localGrainAmount, setLocalGrainAmount] = useState(grainAmount);
 
   const handleApplySettings = () => {
     onSettingsChange({
@@ -65,6 +69,7 @@ const SettingsDialog = ({
       pointCount: localPointCount,
       backgroundColor: localBackgroundColor,
       blurAmount: localBlurAmount,
+      grainAmount: localGrainAmount,
     });
   };
 
@@ -86,29 +91,28 @@ const SettingsDialog = ({
   };
 
   useEffect(() => {
-    if (isOpen) {
-      setLocalColors(colors);
-      setLocalBlobCount(blobCount);
-      setLocalSize(size);
-      setLocalPointCount(pointCount);
-      setLocalBackgroundColor(backgroundColor);
-      setLocalBlurAmount(blurAmount);
-    }
+    setLocalColors(colors);
+    setLocalBlobCount(blobCount);
+    setLocalSize(size);
+    setLocalPointCount(pointCount);
+    setLocalBackgroundColor(backgroundColor);
+    setLocalBlurAmount(blurAmount);
+    setLocalGrainAmount(grainAmount);
   }, [
-    isOpen,
     colors,
     blobCount,
     size,
     pointCount,
     backgroundColor,
     blurAmount,
+    grainAmount,
   ]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="fixed bottom-5 right-5 z-10">
-          settings
+        <Button variant="outline" size="icon">
+          <Settings size={18} />
         </Button>
       </DialogTrigger>
       <DialogContent className="bg-background/20 backdrop-blur-md">
@@ -248,6 +252,24 @@ const SettingsDialog = ({
               />
             </div>
 
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <Label>grain</Label>
+                <span className="text-muted-foreground">
+                  {localGrainAmount}
+                </span>
+              </div>
+              <Slider
+                value={[localGrainAmount]}
+                min={0}
+                max={50}
+                step={1}
+                onValueChange={(value: number[]) =>
+                  setLocalGrainAmount(value[0])
+                }
+              />
+            </div>
+
             <div className="flex gap-2 pt-2">
               <Button
                 type="button"
@@ -256,6 +278,14 @@ const SettingsDialog = ({
                 className="flex-1"
               >
                 randomize
+              </Button>
+
+              <Button
+                type="button"
+                onClick={handleApplySettings}
+                className="flex-1"
+              >
+                apply
               </Button>
 
               <DropdownMenu>
@@ -268,31 +298,23 @@ const SettingsDialog = ({
                   align="end"
                   className="bg-background/20 backdrop-blur-md"
                 >
-                  <DropdownMenuItem onClick={() => onDownload()}>
-                    current size
+                  <DropdownMenuItem onClick={() => onDownload(640, 480)}>
+                    640x480 (sd)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onDownload(1280, 720)}>
+                    1280x720 (hd)
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onDownload(1920, 1080)}>
-                    1920×1080 (hd)
+                    1920×1080 (fhd)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onDownload(2560, 1440)}>
+                    2560x1440 (qhd)
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onDownload(3840, 2160)}>
                     3840×2160 (4k)
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onDownload(1080, 1920)}>
-                    1080×1920 (mobile)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onDownload(1200, 630)}>
-                    1200×630 (social)
-                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              <Button
-                type="button"
-                onClick={handleApplySettings}
-                className="flex-1"
-              >
-                apply
-              </Button>
             </div>
           </div>
         </div>

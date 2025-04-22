@@ -1,15 +1,17 @@
 import { useState, useRef } from "react";
 import BlobBackground from "./components/BlobBackground";
 import SettingsDialog from "./components/SettingsDialog";
+import FullscreenButton from "./components/FullscreenButton";
 
 function App() {
   const [settings, setSettings] = useState({
-    colors: ["#ff7e5f", "#feb47b"],
-    blobCount: 2,
+    colors: ["#e42542", "#f0e328", "#9ca5e7"],
+    blobCount: 3,
     size: 0.5,
     pointCount: 8,
-    backgroundColor: "#121212",
-    blurAmount: 40,
+    backgroundColor: "#191c33",
+    blurAmount: 100,
+    grainAmount: 16,
   });
 
   const [randomSeed, setRandomSeed] = useState(0);
@@ -22,6 +24,7 @@ function App() {
     pointCount: number;
     backgroundColor: string;
     blurAmount: number;
+    grainAmount: number;
   }) => {
     setSettings(newSettings);
   };
@@ -69,21 +72,26 @@ function App() {
         pointCount={settings.pointCount}
         backgroundColor={settings.backgroundColor}
         blurAmount={settings.blurAmount}
+        grainAmount={settings.grainAmount}
         randomSeed={randomSeed}
         canvasRef={canvasRef}
       />
 
-      <SettingsDialog
-        colors={settings.colors}
-        blobCount={settings.blobCount}
-        size={settings.size}
-        pointCount={settings.pointCount}
-        backgroundColor={settings.backgroundColor}
-        blurAmount={settings.blurAmount}
-        onSettingsChange={handleSettingsChange}
-        onDownload={handleDownload}
-        onRandomize={handleRandomize}
-      />
+      <div className="fixed bottom-5 right-5 z-10 flex gap-2">
+        <FullscreenButton />
+        <SettingsDialog
+          colors={settings.colors}
+          blobCount={settings.blobCount}
+          size={settings.size}
+          pointCount={settings.pointCount}
+          backgroundColor={settings.backgroundColor}
+          blurAmount={settings.blurAmount}
+          grainAmount={settings.grainAmount}
+          onSettingsChange={handleSettingsChange}
+          onDownload={handleDownload}
+          onRandomize={handleRandomize}
+        />
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, RefObject } from "react";
+import { useEffect, useRef, RefObject, useMemo } from "react";
 
 interface BlobBackgroundProps {
   colors: string[];
@@ -8,21 +8,52 @@ interface BlobBackgroundProps {
   backgroundColor: string;
   randomSeed: number;
   blurAmount: number;
+  grainAmount: number;
   canvasRef?: RefObject<HTMLCanvasElement | null>;
 }
 
 const BlobBackground = ({
-  colors = ["#ff7e5f", "#feb47b", "#7ac5d8", "#9d94ff"],
-  blobCount = 4,
+  colors = ["#e42542", "#f0e328", "#9ca5e7"],
+  blobCount = 3,
   size = 0.5,
   pointCount = 8,
-  backgroundColor = "#ffffff",
+  backgroundColor = "#191c33",
   randomSeed = 0,
-  blurAmount = 40,
+  blurAmount = 100,
+  grainAmount = 16,
   canvasRef: externalCanvasRef,
 }: Partial<BlobBackgroundProps>) => {
   const internalCanvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef = externalCanvasRef || internalCanvasRef;
+
+  // Generate blob data based only on randomSeed, blobCount and pointCount
+  const blobData = useMemo(() => {
+    const generateBlobPoints = (count: number) => {
+      return Array.from({ length: count }).map(() => ({
+        angle: 0,
+        radius: 0.5 + Math.random() * 0.3,
+      }));
+    };
+
+    // Use randomSeed to set the random seed
+    // This ensures the same "random" positions for the same randomSeed value
+    const pseudoRandom = (seed: number) => {
+      return function () {
+        const x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+      };
+    };
+
+    const random = pseudoRandom(randomSeed);
+
+    return Array.from({ length: blobCount }).map((_, i) => ({
+      points: generateBlobPoints(pointCount),
+      colorIndex: i % colors.length,
+      x: random() * 100, // Store as percentage of canvas width
+      y: random() * 100, // Store as percentage of canvas height
+      scale: 1 + random() * 1.5, // Larger blobs that overlap more
+    }));
+  }, [randomSeed, blobCount, pointCount, colors.length]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -38,23 +69,6 @@ const BlobBackground = ({
 
     // Initial sizing
     resizeCanvas();
-
-    // Create blob points with larger, overlapping blobs for gradient effect
-    const blobs = Array.from({ length: blobCount }).map((_, i) => ({
-      points: generateBlobPoints(pointCount),
-      color: colors[i % colors.length],
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      scale: 1 + Math.random() * 1.5, // Larger blobs that overlap more
-    }));
-
-    // Generate random points for blob
-    function generateBlobPoints(count: number) {
-      return Array.from({ length: count }).map(() => ({
-        angle: 0,
-        radius: 0.5 + Math.random() * 0.3,
-      }));
-    }
 
     // Parse hex color to RGB
     const hexToRgb = (hex: string) => {
@@ -143,6 +157,30 @@ const BlobBackground = ({
       ctx.fill();
     }
 
+    // Apply grain effect to canvas
+    function applyGrain(ctx: CanvasRenderingContext2D, amount: number) {
+      if (amount <= 0 || !canvas) return;
+
+      // Get image data
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      // Apply grain
+      for (let i = 0; i < data.length; i += 4) {
+        // Generate random noise value between -range and +range
+        const noise = (Math.random() - 0.5) * amount * 2;
+
+        // Apply noise to each RGB channel
+        data[i] = Math.min(255, Math.max(0, data[i] + noise)); // Red
+        data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise)); // Green
+        data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise)); // Blue
+        // Don't modify alpha channel (i + 3)
+      }
+
+      // Put the modified image data back on the canvas
+      ctx.putImageData(imageData, 0, 0);
+    }
+
     // Render the gradient image
     const renderGradient = () => {
       // Fill background first
@@ -160,14 +198,18 @@ const BlobBackground = ({
         ctx.filter = `blur(${blurAmount}px)`;
       }
 
-      // Draw blobs with random positions
-      blobs.forEach((blob) => {
+      // Draw blobs with stable positions based on blob data
+      blobData.forEach((blob) => {
+        // Convert percentage coordinates to actual pixel coordinates
+        const x = (blob.x / 100) * canvas.width;
+        const y = (blob.y / 100) * canvas.height;
+
         drawBlob(
           ctx,
           blob.points,
-          blob.color,
-          blob.x,
-          blob.y,
+          colors[blob.colorIndex],
+          x,
+          y,
           size,
           blob.scale
         );
@@ -177,6 +219,11 @@ const BlobBackground = ({
       ctx.filter = "none";
       ctx.globalAlpha = 1.0;
       ctx.globalCompositeOperation = "source-over";
+
+      // Apply grain effect after everything else
+      if (grainAmount > 0) {
+        applyGrain(ctx, grainAmount);
+      }
     };
 
     renderGradient();
@@ -194,12 +241,11 @@ const BlobBackground = ({
     };
   }, [
     colors,
-    blobCount,
     size,
-    pointCount,
     backgroundColor,
-    randomSeed,
     blurAmount,
+    grainAmount,
+    blobData,
     canvasRef,
   ]);
 
