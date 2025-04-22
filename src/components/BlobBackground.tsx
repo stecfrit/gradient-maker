@@ -20,7 +20,7 @@ const BlobBackground = ({
   backgroundColor = "#191c33",
   randomSeed = 0,
   blurAmount = 100,
-  grainAmount = 16,
+  grainAmount = 13,
   canvasRef: externalCanvasRef,
 }: Partial<BlobBackgroundProps>) => {
   const internalCanvasRef = useRef<HTMLCanvasElement>(null);

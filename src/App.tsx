@@ -11,7 +11,7 @@ function App() {
     pointCount: 8,
     backgroundColor: "#191c33",
     blurAmount: 100,
-    grainAmount: 16,
+    grainAmount: 13,
   });
 
   const [randomSeed, setRandomSeed] = useState(0);
